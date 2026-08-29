@@ -96,4 +96,12 @@ Helped develop VChat
 
 ## License
 
-VChat is licensed under the **MIT License**.
+VChat is licensed under the **VChat Custom Usage License**.
+
+You may use, modify, and redistribute VChat for free and non-commercial purposes.
+
+Full reuploads must contain meaningful changes, and redistributed versions must clearly credit:
+
+**A-m-a2021 and V0ID - VChat**
+
+See the `LICENSE` file for the complete license terms
