@@ -1,8 +1,4 @@
--- VChat V1.5 !
--- Universal voice chat detection for all supported NPC bases
--- DrGBase: calls OnSound()
--- VJBase: triggers investigation system
--- Default: forces NPC move toward player
+-- VChat
 
 CreateConVar("vchat_enabled", "1", FCVAR_ARCHIVE, "Enable voice chat detection for all supported NPCs", 0, 1)
 CreateConVar("vchat_threshold", "0.15", FCVAR_ARCHIVE, "Mic volume threshold for voice detection", 0, 1)
@@ -961,7 +957,6 @@ if SERVER then
                 return unpack(ret)
             end
             detourWorking = true
-            print("[VChat] ActMod StartAniAct detoured for emote detection")
         end
     end)
 
