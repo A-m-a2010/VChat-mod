@@ -1,4 +1,24 @@
--- VChat
+--------------------------------------Vchat----------------------------------
+--[[-------------------------------------------------------------------------
+VChat Custom Usage License
+Copyright (c) 2026 A-m-a2021 and V0ID 
+
+Permission is granted to use, copy, modify, publish, and redistribute
+this project and its source code for free and for non-commercial purposes.
+
+REDISTRIBUTION REQUIREMENTS:
+
+* Full reuploads are allowed, but you must make meaningful changes
+or updates to the code project before redistributing.
+* A completely unchanged copy of VChat may not be redistributed.
+* Original copyright notices and this license header must remain intact.
+* Any redistributed version must clearly credit the original authors.
+
+CREDITS:
+A-m-a2021 (Creator of VChat)
+V0ID (Helped develop VChat)
+
+---------------------------------------------------------------------------]]
 
 CreateConVar("vchat_enabled", "1", FCVAR_ARCHIVE, "Enable voice chat detection for all supported NPCs", 0, 1)
 CreateConVar("vchat_threshold", "0.15", FCVAR_ARCHIVE, "Mic volume threshold for voice detection", 0, 1)
