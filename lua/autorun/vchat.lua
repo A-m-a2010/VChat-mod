@@ -540,6 +540,7 @@ if SERVER then
         end
         if IsValid(sourceEnt) and sourceEnt:IsPlayer() and VChat.IsPlayerImmune(sourceEnt) then return 0 end
         if IsValid(sourceEnt) and sourceEnt:IsPlayer() and VChat.IsPlayerMuted(sourceEnt) then return 0 end
+		if IsValid(sourceEnt) and sourceEnt:IsPlayer() and not sourceEnt:Alive() then return 0 end
 
         VChat.RecordSound(sourceEnt, soundType, sourcePos, baseRange)
 
@@ -878,6 +879,7 @@ if SERVER then
         if GetConVar("ai_disabled"):GetBool() then return end
         if GetConVar("ai_ignoreplayers"):GetBool() then return end
         if not IsValid(ply) or not ply:IsPlayer() then return end
+	    if not ply:Alive() then return end
         if teamChat and not GetConVar("vchat_teamchat"):GetBool() then return end
 
         local range = GetConVar("vchat_textchat_range"):GetFloat()
@@ -899,6 +901,7 @@ if SERVER then
 
         local ent = data.Entity
         if not IsValid(ent) or not ent:IsPlayer() then return end
+        if not ent:Alive() then return end
         if IsPlayerImmune(ent) then return end
 
         local uid = ent:UserID()
@@ -923,6 +926,7 @@ if SERVER then
         if GetConVar("ai_disabled"):GetBool() then return end
         if GetConVar("ai_ignoreplayers"):GetBool() then return end
         if not IsValid(ply) or not ply:IsPlayer() then return end
+        if not ply:Alive() then return end
         if VChat.IsPlayerImmune(ply) then return end
         if VChat.IsPlayerMuted(ply) then return end
 
