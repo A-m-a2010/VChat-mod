@@ -51,7 +51,26 @@ You can configure:
 
 NPCs may require a valid NavMesh to properly pathfind toward detected sounds.
 
-Maps without a NavMesh may cause NPC movement or investigation behavior to not work correctly.
+Maps without a NavMesh may cause NPC movement or investigation behavior to not work correctly
+
+## Want to Help Develop VChat?
+
+If you are interested in helping improve VChat, contributions are welcome!
+
+You can help with things such as:
+
+* Bug fixes
+* Small updates
+* New features
+* Code improvements
+* NPC compatibility
+* Testing and finding issues
+
+If you contribute useful work to VChat, such as helping fix bugs or developing updates, you will receive proper credit for your contribution.
+
+You are also free to create your own version or addon based on VChat However if you create a useful bug fix, improvement, compatibility update, or small feature, I would appreciate it if you shared it with the original VChat project so it can potentially be added to the official version
+
+Contributors who help improve the original VChat will receive credit
 
 ## For Developers
 
