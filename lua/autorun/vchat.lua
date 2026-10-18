@@ -51,11 +51,12 @@ CreateConVar("vchat_emotes", "0", FCVAR_ARCHIVE, "Enable NPC reaction to ActMod 
 CreateConVar("vchat_emotes_range", "1200", FCVAR_ARCHIVE, "Detection range for emotes", 0, 5000)
 
 CreateConVar("vchat_volume_scaling", "1", FCVAR_ARCHIVE, "Scale detection range by voice volume (louder = farther)", 0, 1)
-CreateConVar("vchat_volume_scale_factor", "2.0", FCVAR_ARCHIVE, "Volume scaling multiplier for range", 0.1, 5)
+CreateConVar("vchat_volume_scale_factor", "1.5", FCVAR_ARCHIVE, "Volume scaling multiplier for range", 0.1, 5)
+CreateConVar("vchat_wall_min_volume_multiplier", "0.25", FCVAR_ARCHIVE, "Minimum volume range multiplier when a wall blocks the sound path", 0.1, 1)
 CreateConVar("vchat_wall_muffle", "1", FCVAR_ARCHIVE, "Reduce detection range when walls are between source and NPC", 0, 1)
-CreateConVar("vchat_wall_muffle_factor", "0.3", FCVAR_ARCHIVE, "Wall muffle range multiplier (0.3 = 30% range through walls)", 0.01, 1)
+CreateConVar("vchat_wall_muffle_factor", "0.65", FCVAR_ARCHIVE, "Wall muffle range multiplier (0.65 = 65% range through each blocker)", 0.01, 1)
 CreateConVar("vchat_underwater_muffle", "1", FCVAR_ARCHIVE, "Reduce detection range when source is underwater", 0, 1)
-CreateConVar("vchat_underwater_muffle_factor", "0.3", FCVAR_ARCHIVE, "Underwater muffle range multiplier (0.3 = 30% range while submerged)", 0.01, 1)
+CreateConVar("vchat_underwater_muffle_factor", "0.5", FCVAR_ARCHIVE, "Underwater muffle range multiplier (0.5 = 50% range while submerged)", 0.01, 1)
 CreateConVar("vchat_ignore_height", "0", FCVAR_ARCHIVE, "Ignore vertical distance in detection range (use 2D horizontal only)", 0, 1)
 CreateConVar("vchat_mediaplayer", "0", FCVAR_ARCHIVE, "Enable NPC reaction to Media Player  playback", 0, 1)
 CreateConVar("vchat_mediaplayer_range", "1000", FCVAR_ARCHIVE, "Detection range for Media Player ", 0, 5000)
@@ -171,12 +172,16 @@ if CLIENT then
             panel:AddControl("Label", {Text = "Multiplier for how much volume affects detection range"})
             panel:AddControl("Label", {Text = ""})
 
+            panel:AddControl("Slider", { Label = "Minimum Voice Range Through Walls", Command = "vchat_wall_min_volume_multiplier", Type = "Float", Min = "0.1", Max = "1" })
+            panel:AddControl("Label", {Text = "Minimum volume-based range through a wall (lower values let NPCs hear whispers only nearby)"})
+            panel:AddControl("Label", {Text = ""})
+
             panel:AddControl("CheckBox", { Label = "Wall Muffle", Command = "vchat_wall_muffle" })
             panel:AddControl("Label", {Text = "Reduce detection range when walls block the sound path"})
             panel:AddControl("Label", {Text = ""})
 
             panel:AddControl("Slider", { Label = "Wall Muffle Factor", Command = "vchat_wall_muffle_factor", Type = "Float", Min = "0.01", Max = "1" })
-            panel:AddControl("Label", {Text = "How much walls reduce range (0.3 = 30% range through walls)"})
+            panel:AddControl("Label", {Text = "Range multiplier per blocker; loud voice weakens the wall penalty"})
             panel:AddControl("Label", {Text = ""})
 
             panel:AddControl("CheckBox", { Label = "Underwater Muffle", Command = "vchat_underwater_muffle" })
@@ -184,7 +189,7 @@ if CLIENT then
             panel:AddControl("Label", {Text = ""})
 
             panel:AddControl("Slider", { Label = "Underwater Muffle Factor", Command = "vchat_underwater_muffle_factor", Type = "Float", Min = "0.01", Max = "1" })
-            panel:AddControl("Label", {Text = "How much underwater reduces range (0.3 = 30% range while submerged)"})
+            panel:AddControl("Label", {Text = "How much range remains while submerged (0.5 = 50% range)"})
             panel:AddControl("Label", {Text = ""})
 
             panel:AddControl("CheckBox", { Label = "Ignore Height", Command = "vchat_ignore_height" })
@@ -194,11 +199,12 @@ if CLIENT then
             local resetSoundBtn = panel:Button("Reset Sound Features")
             resetSoundBtn.DoClick = function()
                 RunConsoleCommand("vchat_volume_scaling", "1")
-                RunConsoleCommand("vchat_volume_scale_factor", "2.0")
+                RunConsoleCommand("vchat_volume_scale_factor", "1.5")
+                RunConsoleCommand("vchat_wall_min_volume_multiplier", "0.25")
                 RunConsoleCommand("vchat_wall_muffle", "1")
-                RunConsoleCommand("vchat_wall_muffle_factor", "0.3")
+                RunConsoleCommand("vchat_wall_muffle_factor", "0.65")
                 RunConsoleCommand("vchat_underwater_muffle", "1")
-                RunConsoleCommand("vchat_underwater_muffle_factor", "0.3")
+                RunConsoleCommand("vchat_underwater_muffle_factor", "0.5")
                 RunConsoleCommand("vchat_ignore_height", "0")
                 chat.AddText(Color(100, 200, 255), "[VChat] Sound features reset to defaults")
             end
@@ -374,11 +380,12 @@ if CLIENT then
                 RunConsoleCommand("vchat_emotes", "0")
                 RunConsoleCommand("vchat_emotes_range", "1200")
                 RunConsoleCommand("vchat_volume_scaling", "1")
-                RunConsoleCommand("vchat_volume_scale_factor", "2.0")
+                RunConsoleCommand("vchat_volume_scale_factor", "1.5")
+                RunConsoleCommand("vchat_wall_min_volume_multiplier", "0.25")
                 RunConsoleCommand("vchat_wall_muffle", "1")
-                RunConsoleCommand("vchat_wall_muffle_factor", "0.3")
+                RunConsoleCommand("vchat_wall_muffle_factor", "0.65")
                 RunConsoleCommand("vchat_underwater_muffle", "1")
-                RunConsoleCommand("vchat_underwater_muffle_factor", "0.3")
+                RunConsoleCommand("vchat_underwater_muffle_factor", "0.5")
                 RunConsoleCommand("vchat_ignore_height", "0")
                 RunConsoleCommand("vchat_mediaplayer", "0")
                 RunConsoleCommand("vchat_mediaplayer_range", "1000")
@@ -425,10 +432,44 @@ if SERVER then
       end
     end
 
-    local function Debug(msg)
+    local function Debug(event, ...)
         if not GetConVar("vchat_debug"):GetBool() then return end
-        local t = os.date("%H:%M:%S")
-        print("["..t.."] [VChat] "..msg)
+        local fields = {}
+        for i = 1, select("#", ...) do
+            fields[#fields + 1] = tostring(select(i, ...))
+        end
+        local timestamp = os.date("%H:%M:%S")
+        local details = #fields > 0 and (" " .. table.concat(fields, " | ")) or ""
+        print("[" .. timestamp .. "] [VChat][" .. string.upper(event) .. "]" .. details)
+    end
+
+    local vchatSource = debug.getinfo(Debug, "S").source
+    local function IsExternalAPISource(source)
+        if not isstring(source) or source == "=[C]" or source == vchatSource then return false end
+        return string.find(source, "addons/", 1, true) ~= nil
+            or string.find(source, "addons\\", 1, true) ~= nil
+            or string.find(source, "lua/", 1, true) ~= nil
+            or string.find(source, "lua\\", 1, true) ~= nil
+    end
+
+    local function DebugExternalCallback(apiName, callback, ...)
+        if not GetConVar("vchat_debug"):GetBool() or not isfunction(callback) then return end
+        local info = debug.getinfo(callback, "S")
+        if not info or not IsExternalAPISource(info.source) then return end
+        Debug("API", "api=" .. apiName, "mod_source=" .. info.source, ...)
+    end
+
+    local function DebugExternalHook(hookName, ...)
+        if not GetConVar("vchat_debug"):GetBool() then return end
+        local callbacks = hook.GetTable()[hookName]
+        if not istable(callbacks) then return end
+        for identifier, callback in pairs(callbacks) do
+            if not isfunction(callback) then continue end
+            local info = debug.getinfo(callback, "S")
+            if info and IsExternalAPISource(info.source) then
+                Debug("API", "hook=" .. hookName, "handler=" .. tostring(identifier), "mod_source=" .. info.source, ...)
+            end
+        end
     end
 
     local function GetDistance(a, b)
@@ -444,14 +485,34 @@ if SERVER then
     VChat.NPCBlacklist = VChat.NPCBlacklist or {}
 
     function VChat.AddBlacklist(class)
-        if not isstring(class) then return false end
+        if not isstring(class) then
+            local caller = debug.getinfo(2, "S")
+            if caller and IsExternalAPISource(caller.source) then
+                Debug("API", "api=VChat.AddBlacklist", "mod_source=" .. caller.source, "result=rejected", "reason=class must be a string")
+            end
+            return false
+        end
         VChat.NPCBlacklist[class] = true
+        local caller = debug.getinfo(2, "S")
+        if caller and IsExternalAPISource(caller.source) then
+            Debug("API", "api=VChat.AddBlacklist", "mod_source=" .. caller.source, "class=" .. class, "result=added")
+        end
         return true
     end
 
     function VChat.RemoveBlacklist(class)
-        if not isstring(class) then return false end
+        if not isstring(class) then
+            local caller = debug.getinfo(2, "S")
+            if caller and IsExternalAPISource(caller.source) then
+                Debug("API", "api=VChat.RemoveBlacklist", "mod_source=" .. caller.source, "result=rejected", "reason=class must be a string")
+            end
+            return false
+        end
         VChat.NPCBlacklist[class] = nil
+        local caller = debug.getinfo(2, "S")
+        if caller and IsExternalAPISource(caller.source) then
+            Debug("API", "api=VChat.RemoveBlacklist", "mod_source=" .. caller.source, "class=" .. class, "result=removed")
+        end
         return true
     end
 
@@ -473,27 +534,45 @@ if SERVER then
     VChat.SoundFeatures = VChat.SoundFeatures or {}
     VChat.SoundFeatures.Custom = VChat.SoundFeatures.Custom or {}
 
-    function VChat.SoundFeatures.GetVolumeScaledRange(baseRange, volume)
+    function VChat.SoundFeatures.GetVolumeScaledRange(baseRange, volume, minimumMultiplier)
         if not GetConVar("vchat_volume_scaling"):GetBool() then return baseRange end
-        if not volume then return baseRange end
+        if not isnumber(volume) then return baseRange end
         local factor = GetConVar("vchat_volume_scale_factor"):GetFloat()
-        return baseRange * math.Clamp(volume * factor, 0.1, factor)
+        local multiplier = math.Clamp(volume * factor, 0.1, factor)
+        if isnumber(minimumMultiplier) then
+            multiplier = math.max(multiplier, math.Clamp(minimumMultiplier, 0.1, 1))
+        end
+        return baseRange * multiplier
     end
 
-    function VChat.SoundFeatures.ApplyWallMuffle(range, sourcePos, listenerPos, sourceEnt)
-        if not GetConVar("vchat_wall_muffle"):GetBool() then return range end
-
+    function VChat.SoundFeatures.GetWallBlockCount(sourcePos, listenerPos, sourceEnt)
+        if not isvector(sourcePos) or not isvector(listenerPos) then return 0 end
+        if sourcePos:DistToSqr(listenerPos) <= 1 then return 0 end
         local tr = util.TraceLine({
             start = sourcePos,
             endpos = listenerPos,
-            filter = function(ent)
-                return ent ~= sourceEnt and not ent:IsPlayer() and not ent:IsNPC() and ent:GetClass() ~= "prop_physics"
-            end
+            mask = MASK_SOLID_BRUSHONLY,
+            filter = IsValid(sourceEnt) and sourceEnt or nil
         })
 
-        if tr.Hit and (tr.MatType or 0) ~= MAT_GRATE then
+        if tr.Hit and (tr.MatType or 0) ~= MAT_GRATE then return 1 end
+        return 0
+    end
+
+    function VChat.SoundFeatures.IsPathBlocked(sourcePos, listenerPos, sourceEnt)
+        return VChat.SoundFeatures.GetWallBlockCount(sourcePos, listenerPos, sourceEnt) > 0
+    end
+
+    function VChat.SoundFeatures.ApplyWallMuffle(range, sourcePos, listenerPos, sourceEnt, wallCount, volume, voiceOnly)
+        if not GetConVar("vchat_wall_muffle"):GetBool() then return range end
+        wallCount = wallCount or VChat.SoundFeatures.GetWallBlockCount(sourcePos, listenerPos, sourceEnt)
+        if wallCount > 0 then
             local muffleFactor = GetConVar("vchat_wall_muffle_factor"):GetFloat()
-            range = range * muffleFactor
+            if voiceOnly and isnumber(volume) then
+                local loudness = math.Clamp(volume, 0, 1)
+                muffleFactor = muffleFactor + (1 - muffleFactor) * loudness * 0.6
+            end
+            range = range * math.pow(muffleFactor, wallCount)
         end
 
         return range
@@ -513,16 +592,23 @@ if SERVER then
         return range
     end
 
-    function VChat.SoundFeatures.GetEffectiveRange(baseRange, volume, sourcePos, listenerPos, sourceEnt)
+    function VChat.SoundFeatures.GetEffectiveRange(baseRange, volume, sourcePos, listenerPos, sourceEnt, voiceOnly)
         local range = baseRange
 
-        range = VChat.SoundFeatures.GetVolumeScaledRange(range, volume)
-        range = VChat.SoundFeatures.ApplyWallMuffle(range, sourcePos, listenerPos, sourceEnt)
+        local wallCount = 0
+        if GetConVar("vchat_wall_muffle"):GetBool() then
+            wallCount = VChat.SoundFeatures.GetWallBlockCount(sourcePos, listenerPos, sourceEnt)
+        end
+        local wallBlocked = wallCount > 0
+        local minimumVolumeMultiplier = wallBlocked and GetConVar("vchat_wall_min_volume_multiplier"):GetFloat() or nil
+        range = VChat.SoundFeatures.GetVolumeScaledRange(range, volume, minimumVolumeMultiplier)
+        range = VChat.SoundFeatures.ApplyWallMuffle(range, sourcePos, listenerPos, sourceEnt, wallCount, volume, voiceOnly)
         range = VChat.SoundFeatures.ApplyUnderwaterMuffle(range, sourceEnt)
 
         for name, func in pairs(VChat.SoundFeatures.Custom) do
             if isfunction(func) then
                 local ok, result = pcall(func, range, sourcePos, listenerPos, sourceEnt, volume)
+                DebugExternalCallback("SoundFeatures.Custom[" .. tostring(name) .. "]", func, "input_range=" .. math.Round(range) .. "u", "result=" .. (ok and tostring(result) or "error: " .. tostring(result)))
                 if ok and isnumber(result) then
                     range = result
                 end
@@ -532,7 +618,21 @@ if SERVER then
         return range
     end
 
-    function VChat.ReactAllNPCs(sourcePos, baseRange, sourceEnt, soundType, volume, voiceOnly, sourceId)
+    function VChat.GetEmittedSoundRange(baseRange, soundData)
+        if not istable(soundData) then return baseRange end
+        local soundLevel = tonumber(soundData.SoundLevel)
+        local soundVolume = tonumber(soundData.Volume)
+        if not soundLevel or not soundVolume or soundLevel <= 0 or soundVolume <= 0 then return baseRange end
+        local estimatedRange = math.pow(soundLevel / 2, 2) * soundVolume
+        return math.min(baseRange, estimatedRange)
+    end
+
+    function VChat.ReactAllNPCs(sourcePos, baseRange, sourceEnt, soundType, volume, voiceOnly, sourceId, emittedSound)
+        local caller = debug.getinfo(2, "S")
+        if caller and IsExternalAPISource(caller.source) then
+            local rangeLabel = isnumber(baseRange) and (math.Round(baseRange) .. "u") or tostring(baseRange)
+            Debug("API", "api=VChat.ReactAllNPCs", "mod_source=" .. caller.source, "sound=" .. (soundType or "custom"), "base_range=" .. rangeLabel)
+        end
         if voiceOnly and not GetConVar("vchat_enabled"):GetBool() then return 0 end
         if GetConVar("ai_disabled"):GetBool() then return 0 end
         if GetConVar("ai_ignoreplayers"):GetBool() then
@@ -542,11 +642,16 @@ if SERVER then
         if IsValid(sourceEnt) and sourceEnt:IsPlayer() and VChat.IsPlayerMuted(sourceEnt) then return 0 end
 		if IsValid(sourceEnt) and sourceEnt:IsPlayer() and not sourceEnt:Alive() then return 0 end
 
+        baseRange = VChat.GetEmittedSoundRange(baseRange, emittedSound)
         VChat.RecordSound(sourceEnt, soundType, sourcePos, baseRange)
 
         local doDrG     = GetConVar("vchat_drgbase"):GetBool()
         local doVJ      = GetConVar("vchat_vjbase"):GetBool()
         local doDefault = GetConVar("vchat_default"):GetBool()
+        local searchRange = baseRange
+        if voiceOnly and GetConVar("vchat_volume_scaling"):GetBool() then
+            searchRange = baseRange * math.max(1, GetConVar("vchat_volume_scale_factor"):GetFloat())
+        end
 
         local soundData = {
             Pos       = sourcePos,
@@ -573,13 +678,14 @@ if SERVER then
         if doDrG and DrGBase then
             for _, bot in ipairs(DrGBase.GetNextbots()) do
                 if not IsValid(bot) then continue end
-                local effRange = VChat.SoundFeatures.GetEffectiveRange(baseRange, volume, sourcePos, bot:GetPos(), sourceEnt)
+                local effRange = VChat.SoundFeatures.GetEffectiveRange(baseRange, volume, sourcePos, bot:GetPos(), sourceEnt, voiceOnly)
                 if GetDistance(bot:GetPos(), sourcePos) > effRange then continue end
                 if IsValid(bot:GetPossessor()) then continue end
                 if VChat.NPCBlacklist[bot:GetClass()] then continue end
                 if not CheckLOS(bot, sourcePos) then continue end
 
                 local preResult = hook.Run("VChat_PreNPCReact", bot, sourceEnt, soundType, sourcePos, effRange)
+                DebugExternalHook("VChat_PreNPCReact", "npc=" .. bot:GetClass(), "result=" .. tostring(preResult))
                 if preResult == false then continue end
 
                 local cooldown = VChat.GetNPCReactCooldown(bot:GetClass())
@@ -592,7 +698,9 @@ if SERVER then
 
                 local behavior = VChat.SoundBehaviors[bot:GetClass()]
                 if behavior and isfunction(behavior) then
+                    DebugExternalCallback("SoundBehaviors[" .. bot:GetClass() .. "]", behavior, "sound=" .. (soundType or "unknown"), "result=called")
                     local ok, result = pcall(behavior, bot, sourceEnt, soundType, sourcePos)
+                    DebugExternalCallback("SoundBehaviors[" .. bot:GetClass() .. "]", behavior, "success=" .. tostring(ok), "result=" .. tostring(result))
                     if ok and result ~= false then
                         reactedCount = reactedCount + 1
                         VChat.SetNPCSourceCooldown(bot, sourceId, GetConVar("vchat_mediaplayer_cooldown"):GetFloat())
@@ -600,7 +708,7 @@ if SERVER then
                 else
                     bot:OnSound(sourceEnt, soundData)
                     local dist = math.Round(GetDistance(bot:GetPos(), sourcePos))
-                    Debug(bot:GetClass() .. " heard " .. sourceName .. " - distance " .. dist .. " units (effRange: " .. math.Round(effRange) .. ")")
+                    Debug("HEARD", "npc=" .. bot:GetClass(), "source=" .. sourceName, "sound=" .. (soundType or "unknown"), "distance=" .. dist .. "u", "range=" .. math.Round(effRange) .. "u")
                     reactedCount = reactedCount + 1
                     VChat.SetNPCSourceCooldown(bot, sourceId, GetConVar("vchat_mediaplayer_cooldown"):GetFloat())
                 end
@@ -608,12 +716,12 @@ if SERVER then
         end
 
         if doVJ or doDefault then
-            for _, ent in ipairs(ents.FindInSphere(sourcePos, baseRange)) do
+            for _, ent in ipairs(ents.FindInSphere(sourcePos, searchRange)) do
                 if not IsValid(ent) then continue end
                 if ent == sourceEnt then continue end
                 if ent:IsFlagSet(FL_NOTARGET) then continue end
 
-                local effRange = VChat.SoundFeatures.GetEffectiveRange(baseRange, volume, sourcePos, ent:GetPos(), sourceEnt)
+                local effRange = VChat.SoundFeatures.GetEffectiveRange(baseRange, volume, sourcePos, ent:GetPos(), sourceEnt, voiceOnly)
 
                 if doVJ and ent.IsVJBaseSNPC then
                     if GetDistance(ent:GetPos(), sourcePos) <= effRange then
@@ -621,6 +729,7 @@ if SERVER then
                         if VChat.NPCBlacklist[ent:GetClass()] then continue end
 
                         local preResult = hook.Run("VChat_PreNPCReact", ent, sourceEnt, soundType, sourcePos, effRange)
+                        DebugExternalHook("VChat_PreNPCReact", "npc=" .. ent:GetClass(), "result=" .. tostring(preResult))
                         if preResult == false then continue end
 
                         local cooldown = VChat.GetNPCReactCooldown(ent:GetClass())
@@ -633,13 +742,16 @@ if SERVER then
 
                         local behavior = VChat.SoundBehaviors[ent:GetClass()]
                         if behavior and isfunction(behavior) then
+                            DebugExternalCallback("SoundBehaviors[" .. ent:GetClass() .. "]", behavior, "sound=" .. (soundType or "unknown"), "result=called")
                             local ok, result = pcall(behavior, ent, sourceEnt, soundType, sourcePos)
+                            DebugExternalCallback("SoundBehaviors[" .. ent:GetClass() .. "]", behavior, "success=" .. tostring(ok), "result=" .. tostring(result))
                             if ok and result ~= false then
                                 reactedCount = reactedCount + 1
                                 VChat.SetNPCSourceCooldown(ent, sourceId, GetConVar("vchat_mediaplayer_cooldown"):GetFloat())
                             end
                             continue
                         elseif behavior and istable(behavior) then
+                            Debug("API", "api=SoundBehaviors[" .. ent:GetClass() .. "]", "mod_source=external behavior table", "kind=table", "sound=" .. (soundType or "unknown"), "result=applied")
                             if behavior.schedule then ent:SetSchedule(behavior.schedule) end
                             if behavior.vjInvestigate ~= false then
                                 local npcData = ent:GetTable()
@@ -671,7 +783,7 @@ if SERVER then
                         end
 
                         local dist = math.Round(GetDistance(ent:GetPos(), sourcePos))
-                        Debug(ent:GetClass() .. " investigated " .. sourceName .. " - distance " .. dist .. " units (effRange: " .. math.Round(effRange) .. ")")
+                        Debug("INVESTIGATE", "npc=" .. ent:GetClass(), "source=" .. sourceName, "sound=" .. (soundType or "unknown"), "distance=" .. dist .. "u", "range=" .. math.Round(effRange) .. "u")
                         reactedCount = reactedCount + 1
                         VChat.SetNPCSourceCooldown(ent, sourceId, GetConVar("vchat_mediaplayer_cooldown"):GetFloat())
                     end
@@ -681,6 +793,7 @@ if SERVER then
                         if VChat.NPCBlacklist[ent:GetClass()] then continue end
 
                         local preResult = hook.Run("VChat_PreNPCReact", ent, sourceEnt, soundType, sourcePos, effRange)
+                        DebugExternalHook("VChat_PreNPCReact", "npc=" .. ent:GetClass(), "result=" .. tostring(preResult))
                         if preResult == false then continue end
 
                         local cooldown = VChat.GetNPCReactCooldown(ent:GetClass())
@@ -693,13 +806,16 @@ if SERVER then
 
                         local behavior = VChat.SoundBehaviors[ent:GetClass()]
                         if behavior and isfunction(behavior) then
+                            DebugExternalCallback("SoundBehaviors[" .. ent:GetClass() .. "]", behavior, "sound=" .. (soundType or "unknown"), "result=called")
                             local ok, result = pcall(behavior, ent, sourceEnt, soundType, sourcePos)
+                            DebugExternalCallback("SoundBehaviors[" .. ent:GetClass() .. "]", behavior, "success=" .. tostring(ok), "result=" .. tostring(result))
                             if ok and result ~= false then
                                 reactedCount = reactedCount + 1
                                 VChat.SetNPCSourceCooldown(ent, sourceId, GetConVar("vchat_mediaplayer_cooldown"):GetFloat())
                             end
                             continue
                         elseif behavior and istable(behavior) then
+                            Debug("API", "api=SoundBehaviors[" .. ent:GetClass() .. "]", "mod_source=external behavior table", "kind=table", "sound=" .. (soundType or "unknown"), "result=applied")
                             if behavior.schedule then ent:SetSchedule(behavior.schedule) end
                             if IsValid(sourceEnt) and sourceEnt:IsPlayer() and behavior.updateEnemyMemory ~= false then
                                 ent:UpdateEnemyMemory(sourceEnt, sourcePos)
@@ -726,7 +842,7 @@ if SERVER then
 						end
 
                         local dist = math.Round(GetDistance(ent:GetPos(), sourcePos))
-                        Debug(ent:GetClass() .. " investigating sound from " .. sourceName .. " - distance " .. dist .. " units (effRange: " .. math.Round(effRange) .. ")")
+                        Debug("INVESTIGATE", "npc=" .. ent:GetClass(), "source=" .. sourceName, "sound=" .. (soundType or "unknown"), "distance=" .. dist .. "u", "range=" .. math.Round(effRange) .. "u")
                         reactedCount = reactedCount + 1
                         VChat.SetNPCSourceCooldown(ent, sourceId, GetConVar("vchat_mediaplayer_cooldown"):GetFloat())
                     end
@@ -734,11 +850,11 @@ if SERVER then
             end
         end
 
-        if reactedCount > 0 then
-            Debug(sourceName .. " triggered " .. (soundType or "custom") .. " detection - range " .. baseRange .. " (" .. reactedCount .. " NPCs reacted)")
-        end
+        local outcome = reactedCount > 0 and "reacted" or "no NPC reacted"
+        Debug("DETECTION", "source=" .. sourceName, "sound=" .. (soundType or "custom"), "base_range=" .. math.Round(baseRange) .. "u", "npcs_reacted=" .. reactedCount, "result=" .. outcome)
 
         hook.Run("VChat_OnNPCReact", sourcePos, baseRange, sourceEnt, soundType, volume, reactedCount)
+        DebugExternalHook("VChat_OnNPCReact", "sound=" .. (soundType or "custom"), "npcs_reacted=" .. reactedCount, "result=dispatched")
 
         return reactedCount
     end
@@ -785,6 +901,9 @@ if SERVER then
         if GetConVar("ai_ignoreplayers"):GetBool() then return end
         if data.Speed < 200 then return end
 
+        local owner = ent.CPPIGetOwner and ent:CPPIGetOwner() or ent:GetOwner()
+        if IsValid(owner) and owner:IsPlayer() and not owner:Alive() then return end
+
         local range = GetConVar("vchat_props_range"):GetFloat()
         VChat.ReactAllNPCs(data.HitPos, range, ent, "prop collision", nil, false)
     end
@@ -795,6 +914,13 @@ if SERVER then
 
     net.Receive("VChatVoiceState", function(len, ply)
         if not IsValid(ply) or not ply:IsPlayer() then return end
+        if not ply:Alive() then
+            ply.VChat_IsSpeaking = false
+            ply.VChat_LastVolume = 0
+            ply.VChat_LastReactVolume = nil
+            ply.VChat_NextLoudVoiceReact = nil
+            return
+        end
         if not GetConVar("vchat_enabled"):GetBool() then return end
         if GetConVar("ai_disabled"):GetBool() then return end
         if GetConVar("ai_ignoreplayers"):GetBool() then return end
@@ -803,23 +929,44 @@ if SERVER then
 
         local speaking = net.ReadBool()
         local volume   = net.ReadFloat()
+        ply.VChat_IsSpeaking = speaking
+        ply.VChat_LastVolume = volume
 
         if speaking then
+            ply.VChat_LastReactVolume = volume
             local range = GetConVar("vchat_range"):GetFloat()
             VChat.ReactAllNPCs(ply:GetPos(), range, ply, "voice chat", volume, true)
+        else
+            ply.VChat_NextLoudVoiceReact = nil
+            ply.VChat_LastReactVolume = nil
         end
     end)
 
     net.Receive("VChatVolume", function(len, ply)
         if not IsValid(ply) or not ply:IsPlayer() then return end
+        if not ply:Alive() then
+            ply.VChat_IsSpeaking = false
+            ply.VChat_LastVolume = 0
+            ply.VChat_LastReactVolume = nil
+            ply.VChat_NextLoudVoiceReact = nil
+            return
+        end
         if not GetConVar("vchat_enabled"):GetBool() then return end
         if GetConVar("ai_disabled"):GetBool() then return end
         if GetConVar("ai_ignoreplayers"):GetBool() then return end
         if VChat.IsPlayerImmune(ply) then return end
         if VChat.IsPlayerMuted(ply) then return end
 
-        local volume = net.ReadFloat()
+        local volume = math.Clamp(net.ReadFloat(), 0, 1)
         ply.VChat_LastVolume = volume
+        if ply.VChat_IsSpeaking and volume >= (ply.VChat_LastReactVolume or 0) + 0.15 then
+            local now = CurTime()
+            if not ply.VChat_NextLoudVoiceReact or now >= ply.VChat_NextLoudVoiceReact then
+                ply.VChat_NextLoudVoiceReact = now + 0.5
+                ply.VChat_LastReactVolume = volume
+                VChat.ReactAllNPCs(ply:GetPos(), GetConVar("vchat_range"):GetFloat(), ply, "voice chat", volume, true)
+            end
+        end
     end)
 
     hook.Add("OnEntityCreated", "VChatPropHear", function(ent)
@@ -831,10 +978,12 @@ if SERVER then
     end)
 
     local doorClasses = { ["prop_door_rotating"] = true, ["func_door"] = true, ["func_door_rotating"] = true }
-    hook.Add("AcceptInput", "VChatDoorHear", function(ent, input)
+    hook.Add("AcceptInput", "VChatDoorHear", function(ent, input, activator, caller)
         if not GetConVar("vchat_doors"):GetBool() then return end
         if GetConVar("ai_disabled"):GetBool() then return end
         if GetConVar("ai_ignoreplayers"):GetBool() then return end
+        if IsValid(activator) and activator:IsPlayer() and not activator:Alive() then return end
+        if IsValid(caller) and caller:IsPlayer() and not caller:Alive() then return end
         if not doorClasses[ent:GetClass()] then return end
         if input ~= "Open" and input ~= "Close" and input ~= "Toggle" then return end
 
@@ -871,7 +1020,7 @@ if SERVER then
         local range = GetConVar("vchat_explosions_range"):GetFloat()
         local pos = data.Pos or (IsValid(data.Entity) and data.Entity:GetPos()) or Vector(0, 0, 0)
         local ent = IsValid(data.Entity) and data.Entity or game.GetWorld()
-        VChat.ReactAllNPCs(pos, range, ent, "explosion", nil, false)
+        VChat.ReactAllNPCs(pos, range, ent, "explosion", nil, false, nil, data)
     end)
 
     hook.Add("PlayerSay", "VChatTextChatHear", function(ply, text, teamChat)
@@ -879,13 +1028,13 @@ if SERVER then
         if GetConVar("ai_disabled"):GetBool() then return end
         if GetConVar("ai_ignoreplayers"):GetBool() then return end
         if not IsValid(ply) or not ply:IsPlayer() then return end
-	    if not ply:Alive() then return end
+		if not ply:Alive() then return end
         if teamChat and not GetConVar("vchat_teamchat"):GetBool() then return end
 
         local range = GetConVar("vchat_textchat_range"):GetFloat()
         local pos = ply:GetPos()
 
-        Debug(ply:Nick() .. " typed: \"" .. text .. "\" (range: " .. math.Round(range) .. " units)")
+        Debug("EVENT", "source=" .. ply:Nick(), "sound=text chat", "range=" .. math.Round(range) .. "u")
         VChat.ReactAllNPCs(pos, range, ply, "text chat", nil, false)
     end)
 
@@ -901,7 +1050,7 @@ if SERVER then
 
         local ent = data.Entity
         if not IsValid(ent) or not ent:IsPlayer() then return end
-        if not ent:Alive() then return end
+		if not ent:Alive() then return end
         if IsPlayerImmune(ent) then return end
 
         local uid = ent:UserID()
@@ -912,8 +1061,8 @@ if SERVER then
         local pos = data.Pos or ent:GetPos()
         local range = GetConVar("vchat_flashlight_sound_range"):GetFloat()
 
-        Debug(ent:Nick() .. " toggled flashlight - sound detected: " .. soundName)
-        VChat.ReactAllNPCs(pos, range, ent, "flashlight toggle", nil, false)
+        Debug("EVENT", "source=" .. ent:Nick(), "sound=flashlight toggle", "event=" .. soundName, "range=" .. math.Round(range) .. "u")
+        VChat.ReactAllNPCs(pos, range, ent, "flashlight toggle", nil, false, nil, data)
     end)
 
     local emoteCooldowns = {}
@@ -926,7 +1075,7 @@ if SERVER then
         if GetConVar("ai_disabled"):GetBool() then return end
         if GetConVar("ai_ignoreplayers"):GetBool() then return end
         if not IsValid(ply) or not ply:IsPlayer() then return end
-        if not ply:Alive() then return end
+		if not ply:Alive() then return end
         if VChat.IsPlayerImmune(ply) then return end
         if VChat.IsPlayerMuted(ply) then return end
 
@@ -947,7 +1096,7 @@ if SERVER then
             emoteStr = tostring(emoteName)
         end
 
-        Debug(ply:Nick() .. " started emote: " .. emoteStr .. " (range: " .. math.Round(range) .. " units)")
+        Debug("EVENT", "source=" .. ply:Nick(), "sound=emote", "name=" .. emoteStr, "range=" .. math.Round(range) .. "u")
         VChat.ReactAllNPCs(pos, range, ply, "emote: " .. emoteStr, nil, false)
     end
 
@@ -1122,11 +1271,12 @@ if SERVER then
             mpReactCooldowns[id] = now + 4
 
             local owner = GetMediaPlayerOwner(mp, ent)
+            if IsValid(owner) and owner:IsPlayer() and not owner:Alive() then continue end
             local sourceName = IsValid(owner) and owner:IsPlayer() and (owner:Nick() .. "'s Media Player") or "Media Player"
 
             local reactedCount = VChat.ReactAllNPCs(pos, range, ent, "media player", nil, false, id)
             if reactedCount > 0 then
-                Debug(sourceName .. " playing - triggering NPC reaction")
+                Debug("MEDIA", "source=" .. sourceName, "status=playing", "npcs_reacted=" .. reactedCount)
             end
         end
 
@@ -1161,11 +1311,12 @@ if SERVER then
             mpReactCooldowns[id] = CurTime() + 4
 
             local owner = GetMediaPlayerOwner(mp, ent)
+            if IsValid(owner) and owner:IsPlayer() and not owner:Alive() then return end
             local sourceName = IsValid(owner) and owner:IsPlayer() and (owner:Nick() .. "'s Media Player") or "Media Player"
 
             local reactedCount = VChat.ReactAllNPCs(pos, cv_mp_range:GetFloat(), ent, "media player", nil, false, id)
             if reactedCount > 0 then
-                Debug(sourceName .. " queued media started playing - " .. reactedCount .. " NPCs reacted")
+                Debug("MEDIA", "source=" .. sourceName, "status=started", "npcs_reacted=" .. reactedCount)
             end
         end)
     end)
