@@ -1,96 +1,52 @@
 # VChat
 
-VChat is a Garry's Mod addon that allows supported NPCs to react to voice chat and other sounds
+VChat lets supported NPCs react to player voice chat and other sounds.
 
 ## Features
 
-* Voice chat detection
-* Volume-based detection range
-* Wall muffling
-* Underwater muffling
-* Prop collision detection
-* Door sound detection
-* Footstep detection
-* Gunshot detection
-* Explosion detection
-* Text chat detection
-* Flashlight toggle sound detection
-* ActMod emote support
-* Media Player support
+- Voice chat detection with volume-based range
+- Wall and underwater muffling
+- Prop collision, door, footstep, gunshot, and explosion detection
+- Text chat and flashlight toggle detection
+- ActMod emote support
+- Media Player support
+- Configurable detection ranges, NPC support, and debug output
 
-> Most optional sound features are disabled by default.
+Most optional sound detections are disabled by default.
 
 ## Supported NPC Bases
 
-VChat currently supports:
+- Default Source Engine NPCs
+- DrGBase NextBots
+- VJBase SNPCs
 
-* Default Source Engine NPCs
-* DrGBase NextBots
-* VJBase SNPCs
-
-Some NPCs may not react correctly depending on how their AI or movement systems are coded.
+Some NPCs may not investigate sounds correctly because of how their AI or movement is set up.
 
 ## Settings
 
-All VChat settings can be found here:
+Open the settings from:
 
 `Q Menu → Utilities → VChat → VChat Settings`
 
-You can configure:
-
-* Voice detection
-* Detection ranges
-* NPC support
-* Sound features
-* Volume scaling
-* Wall muffling
-* Underwater muffling
-* Debug mode
+The menu includes voice detection, detection ranges, NPC base support, sound features, volume scaling, wall and underwater muffling, and debug mode.
 
 ## NavMesh
 
-NPCs may require a valid NavMesh to properly pathfind toward detected sounds.
+Some NPCs need a valid NavMesh to move toward a sound. On maps without one, an NPC may detect the sound but fail to reach its source.
 
-Maps without a NavMesh may cause NPC movement or investigation behavior to not work correctly
+## Contributing
 
-## Want to Help Develop VChat?
+Contributions are welcome. Useful contributions include bug fixes, compatibility updates, testing, and small features. Contributors to the original VChat project will receive credit.
 
-If you are interested in helping improve VChat, contributions are welcome!
-
-You can help with things such as:
-
-* Bug fixes
-* Small updates
-* New features
-* Code improvements
-* NPC compatibility
-* Testing and finding issues
-
-If you contribute useful work to VChat, such as helping fix bugs or developing updates, you will receive proper credit for your contribution.
-
-You are also free to create your own version or addon based on VChat However if you create a useful bug fix, improvement, compatibility update, or small feature, I would appreciate it if you shared it with the original VChat project so it can potentially be added to the official version
-
-Contributors who help improve the original VChat will receive credit
+You can also make your own version of VChat. If you make a useful fix or improvement, please share it with the original project so it can be considered for inclusion.
 
 ## For Developers
 
-VChat includes an API that allows other developers to add compatibility for custom NPCs, addons, and sound-based systems.
-
-Developers can extend VChat without modifying its main code.
+VChat has an API for adding custom NPC reactions, changing sound ranges, and responding to NPC reactions. Add your code in a separate addon; you do not need to edit VChat's main file.
 
 ### Custom NPC Sound Behaviors
 
-Developers can create custom reactions for specific NPC classes.
-
-Custom behaviors can:
-
-* Make NPCs investigate a location
-* Start custom AI behavior
-* Change NPC schedules
-* Trigger custom functions
-* Ignore specific sounds
-
-Example:
+Set a behavior for an NPC class in `VChat.SoundBehaviors`:
 
 ```lua
 VChat.SoundBehaviors["my_custom_npc"] = function(npc, source, soundType, soundPos)
@@ -99,58 +55,41 @@ VChat.SoundBehaviors["my_custom_npc"] = function(npc, source, soundType, soundPo
 end
 ```
 
-### NPC Blacklists
+Return `false` from the function to report that the behavior did not handle the sound.
 
-Specific NPC classes can be prevented from reacting to VChat.
+### NPC Blacklist
+
+Prevent an NPC class from reacting:
 
 ```lua
 VChat.AddBlacklist("my_npc_class")
 ```
 
-To remove an NPC from the blacklist:
+Allow it to react again:
 
 ```lua
 VChat.RemoveBlacklist("my_npc_class")
 ```
 
-This is useful for incompatible NPCs, custom AI, or NPCs that should ignore VChat completely.
-
 ### Player Immunity
 
-Players can be made immune to VChat detection.
-
-VChat automatically supports:
-
-* Admin immunity
-* `FL_NOTARGET` immunity
-* Custom player immunity systems
-* Muted players
-
-Developers can add their own player to the immunity table:
+VChat can skip players listed in `VChat.PlayerImmunity`:
 
 ```lua
 VChat.PlayerImmunity[ply:SteamID64()] = true
 ```
 
-To remove immunity:
+Remove the entry to restore detection for that player:
 
 ```lua
 VChat.PlayerImmunity[ply:SteamID64()] = nil
 ```
 
-### Custom Sound Processing
+VChat also has settings and checks for admin immunity, `FL_NOTARGET`, and muted players.
 
-Developers can modify how VChat calculates detection range.
+### Custom Sound Range
 
-Custom sound processing can affect:
-
-* Detection range
-* Voice volume scaling
-* Wall muffling
-* Underwater muffling
-* Custom sound effects
-
-Example:
+Add a function to `VChat.SoundFeatures.Custom` to adjust the range calculated for each listener. Return the range that VChat should use next:
 
 ```lua
 VChat.SoundFeatures.Custom["my_addon"] = function(
@@ -164,13 +103,11 @@ VChat.SoundFeatures.Custom["my_addon"] = function(
 end
 ```
 
-This example reduces the final detection range by 50%.
+This example halves the range.
 
 ### NPC Reaction Hooks
 
-VChat provides hooks that allow other addons to interact with NPC reactions.
-
-#### Prevent an NPC from reacting
+Use `VChat_PreNPCReact` to stop one NPC from reacting. Returning `false` prevents that NPC's reaction:
 
 ```lua
 hook.Add("VChat_PreNPCReact", "MyAddon_PreventReaction", function(
@@ -186,9 +123,7 @@ hook.Add("VChat_PreNPCReact", "MyAddon_PreventReaction", function(
 end)
 ```
 
-Returning `false` prevents that NPC from reacting.
-
-#### Detect NPC reactions
+Use `VChat_OnNPCReact` to find out when VChat finishes checking a sound:
 
 ```lua
 hook.Add("VChat_OnNPCReact", "MyAddon_NPCReact", function(
@@ -203,36 +138,19 @@ hook.Add("VChat_OnNPCReact", "MyAddon_NPCReact", function(
 end)
 ```
 
-### Custom Cooldowns
+### NPC Cooldowns
 
-VChat supports cooldowns to prevent NPC reaction spam.
-
-Developers can set a cooldown for a specific NPC class:
+Set a reaction cooldown in seconds for an NPC class:
 
 ```lua
 VChat.NPCReactCooldowns["my_npc_class"] = 5
 ```
 
-This prevents that NPC class from reacting again for 5 seconds.
+VChat also tracks per-NPC, per-source cooldowns for supported integrations.
 
-VChat also supports per-NPC and per-source cooldowns.
+### Trigger a Custom Sound
 
-### Creating Custom Sound Events
-
-Developers can manually make nearby NPCs react to a custom sound:
-
-```lua
-VChat.ReactAllNPCs(
-    soundPos,
-    1000,
-    sourceEnt,
-    "custom sound",
-    1,
-    false
-)
-```
-
-Example:
+Call `VChat.ReactAllNPCs` to make supported NPCs check a sound source:
 
 ```lua
 VChat.ReactAllNPCs(
@@ -245,31 +163,19 @@ VChat.ReactAllNPCs(
 )
 ```
 
-This makes supported NPCs within range react to the custom sound.
+The arguments are the sound position, base range, source entity, sound name, volume, and whether this is voice chat.
 
 ### Sound History
 
-VChat records recent detected sounds from players.
-
-This can be useful for custom systems that want to inspect a player's recent sound activity:
+VChat keeps recent sound records by player SteamID64. Read a player's history with:
 
 ```lua
 local history = VChat.SoundHistory[ply:SteamID64()]
 ```
 
-### Custom Addon Support
+### Other Addon Support
 
-Developers can use VChat to add support for:
-
-* Custom NPC bases
-* Custom NextBots
-* SNPC frameworks
-* Weapons
-* Gamemodes
-* Entities
-* Custom sound sources
-
-VChat is designed to be extended and can be used as a foundation for custom NPC hearing and sound reaction systems
+The API can be used to add support for custom NPCs, NextBots, SNPC frameworks, weapons, entities, gamemodes, and sound sources.
 
 ## Repository Structure
 
@@ -278,35 +184,18 @@ VChat/
 ├── lua/
 │   └── autorun/
 │       └── vchat.lua
-├── README.md
-├── LICENSE
-└── .gitignore
+└── README.md
 ```
 
 ## Forking
 
-Anyone is free to fork and modify VChat.
-
-If you use modify or include VChat code in another project please keep the original credits
-
-Please do not falsely claim the original VChat project as entirely your own
+You may fork and modify VChat. Keep the original credits, follow the license, and do not claim the original project as entirely your own.
 
 ## Credits
 
-**A-m-a2021**
-Creator of VChat
-
-**V0ID**
-Helped develop VChat
+- **A-m-a2021** — Creator of VChat
+- **V0ID** — Development help
 
 ## License
 
-VChat is licensed under the **VChat Custom Usage License**.
-
-You may use, modify, and redistribute VChat for free and non-commercial purposes.
-
-Full reuploads must contain meaningful changes, and redistributed versions must clearly credit:
-
-**A-m-a2021 and V0ID - VChat**
-
-See the `LICENSE` file for the complete license terms
+VChat is licensed under the **VChat Custom Usage License**. It may be used, modified, and redistributed for free for non-commercial purposes. Full reuploads must include meaningful changes and credit **A-m-a2021 and V0ID - VChat**.
