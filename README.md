@@ -184,6 +184,8 @@ VChat/
 ├── lua/
 │   └── autorun/
 │       └── vchat.lua
+├── .gitignore
+├── LICENSE
 └── README.md
 ```
 
