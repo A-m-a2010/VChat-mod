@@ -2,40 +2,29 @@
 
 Copyright (c) 2026 A-m-a2021 and V0ID
 
-Permission is granted to use, copy, modify, publish, and redistribute this project and its source code for free and for non-commercial purposes.
+Permission is granted to use, copy, modify, publish, and redistribute VChat and its source code for free, non-commercial purposes, subject to the terms below.
 
-## You MAY:
+## You may
 
-* Use VChat for personal or public projects.
-* Reupload VChat for free.
-* Modify, update, or improve VChat.
-* Add new features, fixes, or changes.
-* Create your own version based on VChat.
-* Use portions of VChat in another free project.
-* Publish modified versions for free.
+- Use VChat in personal or public projects.
+- Reupload VChat for free, provided you make meaningful changes before redistributing a complete copy.
+- Modify, update, or improve VChat, including adding features, fixing bugs, or improving compatibility.
+- Create and publish your own free version based on VChat.
+- Use portions of VChat in another free project.
 
-## Reupload Requirements
+## Reupload requirements
 
-Full reuploads are allowed, but **you must make meaningful changes to the project** before redistributing it.
+You may redistribute a complete copy of VChat only after making meaningful changes to the project. Meaningful changes include adding a feature, fixing a bug, improving existing features or code, adding compatibility for another addon or base, or making another substantial improvement.
 
-For example, you can:
+A completely unchanged copy of VChat may not be redistributed.
 
-* Add a new feature.
-* Fix bugs.
-* Improve existing features.
-* Update or improve the code.
-* Add compatibility for another addon/base.
-* Make other meaningful changes to the project.
+## You may not
 
-**A completely unchanged copy of VChat may not be redistributed**
-
-## You MAY NOT:
-
-* Sell VChat or a version substantially based on it.
-* Charge money for VChat or its derivatives.
-* Use VChat to directly generate revenue.
-* Remove the original copyright notice or license.
-* Redistribute a modified version without crediting the original authors.
+- Sell VChat or a version substantially based on it.
+- Charge for VChat or its derivatives.
+- Use VChat to directly generate revenue.
+- Remove the original copyright notice or this license.
+- Redistribute a modified version without crediting the original authors.
 
 ## Credit
 
@@ -43,7 +32,7 @@ Any redistributed version must clearly credit:
 
 **A-m-a2021 and V0ID - VChat**
 
-Credit should be included in the addon description, repository, documentation, or another clearly visible location.
+Include this credit in the addon description, repository, documentation, or another clearly visible location.
 
 ## Ownership
 
@@ -51,6 +40,6 @@ This license does not transfer ownership of the original VChat project. Copyrigh
 
 ## Disclaimer
 
-VChat is provided "as is", without warranty of any kind. The authors are not responsible for damages or issues caused by the use of this software.
+VChat is provided "as is", without warranty of any kind. The authors are not responsible for damages or issues caused by using the software.
 
-By using, modifying, copying, or redistributing VChat, you agree to these terms.
+By using, modifying, copying, or redistributing VChat, you agree to these terms
